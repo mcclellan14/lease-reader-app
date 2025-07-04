@@ -1,5 +1,6 @@
-streamlit
-openai
-PyMuPDF
+openai>=1.0.0
 gspread
 google-auth
+PyMuPDF
+transformers
+streamlit
