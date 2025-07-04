@@ -20,7 +20,7 @@ if not api_key:
     st.stop()
 openai.api_key = api_key
 
-json_path = "/mount/lease-reader-config.json"
+json_path = "/mount/lease-reader-service-account.json"
 if not os.path.exists(json_path):
     st.error("Google Sheets credentials file not found.")
     st.stop()
@@ -36,42 +36,41 @@ gc = gspread.authorize(creds)
 sheet_url = "https://docs.google.com/spreadsheets/d/1eySt6Xk3PP7WBHvGMt-yEhagbxsnJnW2pKj8iBZ62kw"
 worksheet = gc.worksheet("Lease extraction")
 
-prompt_template = """Extract the following lease information from the text below:
-- Effective Date
-- Landlord
-- Tenant
-- Leased Premises (unit numbers, e.g., 13, 14)
-- Leased Premises Address
-- Square Footage (sum if more than one unit, numbers only, no labels like "sq. ft.")
-- Security Deposit
-- Possession Date
-- Commencement Date
-- Term (Years)
-- Minimum Rent Year 1 to Year 10 (in $/sf, calculated from total square footage)
-- Renewal Option
-- Permitted Use
-- Insurance Requirement
-- Fixturing Period
-- Signage Rent
-- Parking Rent
-- Right of First Refusal
-
-Return exactly one row as a Python list. Each field must be wrapped in double quotes to prevent commas from splitting fields.
-
-Use consistent formatting:
-- All dates must be written as 'Month D, YYYY' (e.g., June 1, 2025)
-- Minimum Rent values must be formatted as dollar amounts, e.g., $19.00
-- Lease terms must be expressed as numbers (e.g., 5 not "FIVE")
-- Leased Premises must be described by unit name/number, not just a count
-
-If the lease is shorter than 10 years, leave the remaining minimum rent year fields as empty strings ("").
-Do not include any explanation before or after the list.
-
-Order: Effective Date, Landlord, Tenant, Leased Premises, Leased Premises Address, Square Footage, Security Deposit, Possession Date, Commencement Date, Term (Years), Minimum Rent Year 1 ($/sf), Minimum Rent Year 2 ($/sf), Minimum Rent Year 3 ($/sf), Minimum Rent Year 4 ($/sf), Minimum Rent Year 5 ($/sf), Minimum Rent Year 6 ($/sf), Minimum Rent Year 7 ($/sf), Minimum Rent Year 8 ($/sf), Minimum Rent Year 9 ($/sf), Minimum Rent Year 10 ($/sf), Renewal Option, Permitted Use, Insurance Requirement, Fixturi...
-
-TEXT:
-"""{lease_text}"""
-"""
+prompt_template = (
+    "Extract the following lease information from the text below:\n"
+    "- Effective Date\n"
+    "- Landlord\n"
+    "- Tenant\n"
+    "- Leased Premises (unit numbers, e.g., 13, 14)\n"
+    "- Leased Premises Address\n"
+    "- Square Footage (sum if more than one unit, numbers only, no labels like 'sq. ft.')\n"
+    "- Security Deposit\n"
+    "- Possession Date\n"
+    "- Commencement Date\n"
+    "- Term (Years)\n"
+    "- Minimum Rent Year 1 to Year 10 (in $/sf, calculated from total square footage)\n"
+    "- Renewal Option\n"
+    "- Permitted Use\n"
+    "- Insurance Requirement\n"
+    "- Fixturing Period\n"
+    "- Signage Rent\n"
+    "- Parking Rent\n"
+    "- Right of First Refusal\n\n"
+    "Return exactly one row as a Python list. Each field must be wrapped in double quotes to prevent commas from splitting fields.\n\n"
+    "Use consistent formatting:\n"
+    "- All dates must be written as 'Month D, YYYY' (e.g., June 1, 2025)\n"
+    "- Minimum Rent values must be formatted as dollar amounts, e.g., $19.00\n"
+    "- Lease terms must be expressed as numbers (e.g., 5 not 'FIVE')\n"
+    "- Leased Premises must be described by unit name/number, not just a count\n\n"
+    "If the lease is shorter than 10 years, leave the remaining minimum rent year fields as empty strings ("").\n"
+    "Do not include any explanation before or after the list.\n\n"
+    "Order: Effective Date, Landlord, Tenant, Leased Premises, Leased Premises Address, Square Footage, Security Deposit, "
+    "Possession Date, Commencement Date, Term (Years), Minimum Rent Year 1 ($/sf), Minimum Rent Year 2 ($/sf), "
+    "Minimum Rent Year 3 ($/sf), Minimum Rent Year 4 ($/sf), Minimum Rent Year 5 ($/sf), Minimum Rent Year 6 ($/sf), "
+    "Minimum Rent Year 7 ($/sf), Minimum Rent Year 8 ($/sf), Minimum Rent Year 9 ($/sf), Minimum Rent Year 10 ($/sf), "
+    "Renewal Option, Permitted Use, Insurance Requirement, Fixturing Period, Signage Rent, Parking Rent, Right of First Refusal\n\n"
+    "TEXT:\n\"\"\"\n{lease_text}\n\"\"\""
+)
 
 uploaded_files = st.file_uploader("📤 Upload lease PDFs", type=["pdf"], accept_multiple_files=True)
 
